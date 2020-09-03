@@ -1,0 +1,4 @@
+---
+user: simon
+local_key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+extra_packages: [ 'curl', 'vim', 'git', 'ufw', 'dfc']

@@ -1,0 +1,160 @@
+---
+- hosts: all
+  become: true
+  vars_files:
+    - vars/default.yml
+
+  handlers:
+    - name: restart ssh
+      service:
+        name=ssh
+        state=restarted
+
+    - name: restart fail2ban
+      service:
+        name: fail2ban
+        state: restarted
+
+  tasks:
+    # Install aptitude.
+    - name: Install aptitude
+      apt: name=aptitude update_cache=yes state=latest force_apt_get=yes
+
+    # Apt update
+    - name: Update apt packages
+      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+
+    # Apt upgrade
+    - name: Upgrade all packages on server
+      apt: upgrade=dist force_apt_get=yes
+
+
+    # make sure the sudo package is installed
+    - name: Install the `sudo` package
+      package:
+        name: sudo
+        state: latest
+
+    # Sudo Group Setup
+    - name: Make sure we have a 'wheel' group
+      group:
+        name: wheel
+        state: present
+
+    - name: Allow 'wheel' group to have passwordless sudo
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    # User Setup
+    - name: Create a new regular user with sudo privileges
+      user:
+        name: "{{ user }}"
+        state: present
+        groups: wheel
+        append: true
+        create_home: true
+        shell: /bin/bash
+
+    - name: Set authorized key for remote user
+      authorized_key:
+        user: "{{ user }}"
+        state: present
+        key: "{{ local_key }}"
+
+
+    # UFW Setup
+    - name: Make sure ufw is installed
+      apt:
+        pkg: ufw
+        state: latest
+
+    - name: UFW - Allow SSH connections on tcp port 22
+      ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+
+    - name: UFW - Deny all other incoming traffic by default
+      ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+    - name: Set ufw logging to on.
+      ufw:
+        logging: 'on'
+
+    #Setup unattended upgrades
+    - name: Install unattended-upgrades package
+      apt:
+        name: unattended-upgrades
+        update_cache: yes
+
+    - name: Enable periodic updates
+      copy:
+        src: templates/10periodic
+        dest: /etc/apt/apt.conf.d/10periodic
+        owner: root
+        group: root
+        mode: 0644
+
+    # Fail2ban
+    - name: Make sure fail2ban is installed
+      apt:
+        pkg: fail2ban
+        state: latest
+
+    - name: Set up fail2ban
+      command: cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+       creates=/etc/fail2ban/jail.local
+      notify: restart fail2ban
+
+    - name: Make sure fail2ban is enabled
+      service:
+        name: fail2ban
+        enabled: yes
+
+    # Install extra Packages
+    - name: Update apt
+      apt: update_cache=yes
+
+    - name: Install required system packages
+      apt: name={{ extra_packages }} state=latest
+
+    # set ulimit
+    - name: configure system settings, file descriptors and number of threads
+      pam_limits:
+         domain: "{{ user }}"
+         limit_type: "{{item.limit_type}}"
+         limit_item: "{{item.limit_item}}"
+         value: "{{item.value}}"
+      with_items:
+        - { limit_type: '-', limit_item: 'nofile', value: 65536 }
+        - { limit_type: '-', limit_item: 'nproc', value: 65536 }
+        - { limit_type: 'soft', limit_item: 'memlock', value: unlimited }
+        - { limit_type: 'hard', limit_item: 'memlock', value: unlimited }
+
+    # reload ulimit config
+    - name: reload settings from all system configuration files
+      shell: sysctl --system
+
+    # Delete root password.
+    - name: Delete root password
+      action: shell passwd -d root
+
+    # Disable ssh login for root.
+    - name: Disable ssh login for root. 
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: restart ssh
+
+
+    
+
