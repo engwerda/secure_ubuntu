@@ -1,0 +1,9 @@
+### Ansible ###
+*.retry
+
+### Idea ###
+.idea
+
+
+### Pyenv ###
+.python-version
