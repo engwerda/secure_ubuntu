@@ -146,8 +146,15 @@
     - name: Delete root password
       action: shell passwd -d root
 
+    # Disable ssh password authentication
+    - name: Disallow ssh password authentication
+      lineinfile: dest=/etc/ssh/sshd_config
+        regexp="^PasswordAuthentication"
+        line="PasswordAuthentication no"
+        state=present
+
     # Disable ssh login for root.
-    - name: Disable ssh login for root. 
+    - name: Disable ssh login for root.
       lineinfile:
         path: /etc/ssh/sshd_config
         state: present
@@ -156,5 +163,5 @@
       notify: restart ssh
 
 
-    
+
 
