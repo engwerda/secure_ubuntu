@@ -163,6 +163,7 @@
 
     # Firewall Configuration
     - name: Configure UFW firewall
+      when: not (skip_firewall_in_docker | default(false))
       block:
         - name: Install UFW
           ansible.builtin.apt:
@@ -304,6 +305,7 @@
 
     # System Limits
     - name: Configure system limits
+      when: not (skip_firewall_in_docker | default(false))
       community.general.pam_limits:
         domain: "{{ user }}"
         limit_type: "{{ item.limit_type }}"
