@@ -163,7 +163,7 @@
 
     # Firewall Configuration
     - name: Configure UFW firewall
-      when: not (skip_firewall_in_docker | default(false))
+      when: not (skip_docker_incompatible | default(false))
       block:
         - name: Install UFW
           ansible.builtin.apt:
@@ -228,7 +228,9 @@
             name: auditd
             enabled: yes
             state: started
-          when: enable_auditd
+          when:
+            - enable_auditd
+            - not (skip_docker_incompatible | default(false))
 
     # Fail2ban Configuration
     - name: Configure fail2ban
@@ -259,6 +261,7 @@
             name: fail2ban
             enabled: yes
             state: started
+          when: not (skip_docker_incompatible | default(false))
 
     # Unattended Upgrades
     - name: Configure unattended upgrades
@@ -305,7 +308,7 @@
 
     # System Limits
     - name: Configure system limits
-      when: not (skip_firewall_in_docker | default(false))
+      when: not (skip_docker_incompatible | default(false))
       community.general.pam_limits:
         domain: "{{ user }}"
         limit_type: "{{ item.limit_type }}"
@@ -358,6 +361,7 @@
         name: apparmor
         enabled: yes
         state: started
+      when: not (skip_docker_incompatible | default(false))
 
     # System Cleanup
     - name: Remove unnecessary packages

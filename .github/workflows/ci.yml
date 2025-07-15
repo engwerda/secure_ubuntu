@@ -71,4 +71,4 @@ jobs:
             "cd /ansible && ansible-galaxy collection install -r requirements.yml && \
              ansible-playbook -i localhost, -c local playbook.yml --check --diff \
              -e \"admin_user_key='$(cat test_key.pub)'\" \
-             -e \"skip_firewall_in_docker=true\""
+             -e \"skip_docker_incompatible=true\""
