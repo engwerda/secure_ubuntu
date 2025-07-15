@@ -1,10 +1,14 @@
 ---
 # Comprehensive SSH key management playbook
 # Usage examples:
-#   Add key:    ansible-playbook -i inventory manage-ssh-keys.yml -e "key_action=add target_user=manager ssh_key='ssh-rsa AAAA...'"
-#   Remove key: ansible-playbook -i inventory manage-ssh-keys.yml -e "key_action=remove target_user=manager ssh_key='ssh-rsa AAAA...'"
-#   List keys:  ansible-playbook -i inventory manage-ssh-keys.yml -e "key_action=list target_user=manager"
-#   Add key from file: ansible-playbook -i inventory manage-ssh-keys.yml -e "key_action=add target_user=manager ssh_key_file=/path/to/key.pub"
+#   Add key:    ansible-playbook -i inventory manage-ssh-keys.yml \
+#               -e "key_action=add target_user=manager ssh_key='ssh-rsa AAAA...'"
+#   Remove key: ansible-playbook -i inventory manage-ssh-keys.yml \
+#               -e "key_action=remove target_user=manager ssh_key='ssh-rsa AAAA...'"
+#   List keys:  ansible-playbook -i inventory manage-ssh-keys.yml \
+#               -e "key_action=list target_user=manager"
+#   Add key from file: ansible-playbook -i inventory manage-ssh-keys.yml \
+#                      -e "key_action=add target_user=manager ssh_key_file=/path/to/key.pub"
 
 - name: Manage SSH keys for users
   hosts: all

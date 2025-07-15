@@ -35,7 +35,7 @@ ssh_banner_path: /etc/issue.net
 firewall_ssh_rate_limit: true
 firewall_ssh_rate_limit_rule: "6/minute"
 firewall_allowed_ports:
-  - { port: 22, proto: tcp, comment: "SSH" }
+  - {port: 22, proto: tcp, comment: "SSH"}
 
 # Kernel hardening
 disable_ipv6: true

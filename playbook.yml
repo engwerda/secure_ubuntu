@@ -168,8 +168,8 @@
             direction: "{{ item.direction }}"
             policy: "{{ item.policy }}"
           loop:
-            - { direction: incoming, policy: deny }
-            - { direction: outgoing, policy: allow }
+            - {direction: incoming, policy: deny}
+            - {direction: outgoing, policy: allow}
 
         - name: Configure UFW rules
           community.general.ufw:
@@ -304,10 +304,10 @@
         limit_item: "{{ item.limit_item }}"
         value: "{{ item.value }}"
       loop:
-        - { limit_type: '-', limit_item: 'nofile', value: 65536 }
-        - { limit_type: '-', limit_item: 'nproc', value: 65536 }
-        - { limit_type: 'soft', limit_item: 'memlock', value: unlimited }
-        - { limit_type: 'hard', limit_item: 'memlock', value: unlimited }
+        - {limit_type: '-', limit_item: 'nofile', value: 65536}
+        - {limit_type: '-', limit_item: 'nproc', value: 65536}
+        - {limit_type: 'soft', limit_item: 'memlock', value: unlimited}
+        - {limit_type: 'hard', limit_item: 'memlock', value: unlimited}
 
     # Final Security Steps
     - name: Apply final security configurations

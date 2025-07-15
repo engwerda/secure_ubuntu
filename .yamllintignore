@@ -1,4 +1,0 @@
-.venv/
-.git/
-*.lock
-.github/workflows/ci.yml
