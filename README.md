@@ -119,7 +119,10 @@ Edit `vars/default.yml` to customize:
 Test the playbook locally without a remote server:
 
 ```bash
-# Quick test with Docker (recommended)
+# Quick syntax validation (fastest)
+./test-syntax.sh
+
+# Docker-based testing (recommended)
 ./test-local.sh 22.04 check
 
 # Test with Vagrant VMs
