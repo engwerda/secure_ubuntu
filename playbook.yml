@@ -6,43 +6,52 @@
 
   handlers:
     - name: restart ssh
-      service:
-        name=ssh
-        state=restarted
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
 
     - name: restart fail2ban
-      service:
+      ansible.builtin.service:
         name: fail2ban
         state: restarted
 
   tasks:
     # Install aptitude.
     - name: Install aptitude
-      apt: name=aptitude update_cache=yes state=latest force_apt_get=yes
+      ansible.builtin.apt:
+        name: aptitude
+        update_cache: yes
+        state: latest
+        force_apt_get: yes
 
     # Apt update
     - name: Update apt packages
-      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+      ansible.builtin.apt:
+        update_cache: yes
+        force_apt_get: yes
+        cache_valid_time: 3600
 
     # Apt upgrade
     - name: Upgrade all packages on server
-      apt: upgrade=dist force_apt_get=yes
+      ansible.builtin.apt:
+        upgrade: dist
+        force_apt_get: yes
 
 
     # make sure the sudo package is installed
     - name: Install the `sudo` package
-      package:
+      ansible.builtin.package:
         name: sudo
         state: latest
 
     # Sudo Group Setup
     - name: Make sure we have a 'wheel' group
-      group:
+      ansible.builtin.group:
         name: wheel
         state: present
 
     - name: Allow 'wheel' group to have passwordless sudo
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/sudoers
         state: present
         regexp: '^%wheel'
@@ -51,7 +60,7 @@
 
     # User Setup
     - name: Create a new regular user with sudo privileges
-      user:
+      ansible.builtin.user:
         name: "{{ user }}"
         state: present
         groups: wheel
@@ -60,7 +69,7 @@
         shell: /bin/bash
 
     - name: Set authorized key for remote user
-      authorized_key:
+      ansible.posix.authorized_key:
         user: "{{ user }}"
         state: present
         key: "{{ local_key }}"
@@ -68,34 +77,34 @@
 
     # UFW Setup
     - name: Make sure ufw is installed
-      apt:
+      ansible.builtin.apt:
         pkg: ufw
         state: latest
 
     - name: UFW - Allow SSH connections on tcp port 22
-      ufw:
+      community.general.ufw:
         rule: allow
         port: '22'
         proto: tcp
 
     - name: UFW - Deny all other incoming traffic by default
-      ufw:
+      community.general.ufw:
         state: enabled
         policy: deny
         direction: incoming
 
     - name: Set ufw logging to on.
-      ufw:
+      community.general.ufw:
         logging: 'on'
 
     #Setup unattended upgrades
     - name: Install unattended-upgrades package
-      apt:
+      ansible.builtin.apt:
         name: unattended-upgrades
         update_cache: yes
 
     - name: Enable periodic updates
-      copy:
+      ansible.builtin.copy:
         src: templates/10periodic
         dest: /etc/apt/apt.conf.d/10periodic
         owner: root
@@ -104,34 +113,38 @@
 
     # Fail2ban
     - name: Make sure fail2ban is installed
-      apt:
+      ansible.builtin.apt:
         pkg: fail2ban
         state: latest
 
     - name: Set up fail2ban
-      command: cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-       creates=/etc/fail2ban/jail.local
+      ansible.builtin.command:
+        cmd: cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+        creates: /etc/fail2ban/jail.local
       notify: restart fail2ban
 
     - name: Make sure fail2ban is enabled
-      service:
+      ansible.builtin.service:
         name: fail2ban
         enabled: yes
 
     # Install extra Packages
     - name: Update apt
-      apt: update_cache=yes
+      ansible.builtin.apt:
+        update_cache: yes
 
     - name: Install required system packages
-      apt: name={{ extra_packages }} state=latest
+      ansible.builtin.apt:
+        name: "{{ extra_packages }}"
+        state: latest
 
     # set ulimit
     - name: configure system settings, file descriptors and number of threads
-      pam_limits:
-         domain: "{{ user }}"
-         limit_type: "{{item.limit_type}}"
-         limit_item: "{{item.limit_item}}"
-         value: "{{item.value}}"
+      community.general.pam_limits:
+        domain: "{{ user }}"
+        limit_type: "{{ item.limit_type }}"
+        limit_item: "{{ item.limit_item }}"
+        value: "{{ item.value }}"
       with_items:
         - { limit_type: '-', limit_item: 'nofile', value: 65536 }
         - { limit_type: '-', limit_item: 'nproc', value: 65536 }
@@ -140,22 +153,23 @@
 
     # reload ulimit config
     - name: reload settings from all system configuration files
-      shell: sysctl --system
+      ansible.builtin.shell: sysctl --system
 
     # Delete root password.
     - name: Delete root password
-      action: shell passwd -d root
+      ansible.builtin.shell: passwd -d root
 
     # Disable ssh password authentication
     - name: Disallow ssh password authentication
-      lineinfile: dest=/etc/ssh/sshd_config
-        regexp="^PasswordAuthentication"
-        line="PasswordAuthentication no"
-        state=present
+      ansible.builtin.lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        state: present
 
     # Disable ssh login for root.
     - name: Disable ssh login for root.
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
         state: present
         regexp: '^#?PermitRootLogin'

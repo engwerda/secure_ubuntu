@@ -1,5 +1,8 @@
 ### Ansible ###
 *.retry
+.venv/
+__pycache__/
+*.pyc
 
 ### Idea ###
 .idea

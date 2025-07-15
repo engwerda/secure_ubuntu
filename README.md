@@ -9,7 +9,11 @@ Playbook to quickly secure an Ubuntu server within the first 5 minutes.
 - Install extra packages.
 - Delete root password and disable SSH loging for root.
 
-Tested with Ubuntu 20.04
+Tested with Ubuntu 20.04 and later versions.
+
+Requirements:
+- Python 3.10 or higher
+- Ansible 9.0.0 or higher
 
 ## Settings
 
@@ -20,6 +24,12 @@ Tested with Ubuntu 20.04
 
 ## Running this Playbook
 
+### Prerequisites
+
+Install uv (Python package manager):
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ### Customize Options
 
@@ -40,3 +50,5 @@ extra_packages: [ 'vim', 'git', 'ufw']
 ```command
 ./run.sh <host>
 ```
+
+The script will automatically create a virtual environment and install dependencies on first run.
