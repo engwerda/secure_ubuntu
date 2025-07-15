@@ -114,6 +114,26 @@ Edit `vars/default.yml` to customize:
 
 ## Development
 
+### Local Testing
+
+Test the playbook locally without a remote server:
+
+```bash
+# Quick test with Docker (recommended)
+./test-local.sh 22.04 check
+
+# Test with Vagrant VMs
+vagrant up ubuntu2204
+vagrant provision
+
+# Using Make commands
+make test              # Docker test
+make test-vagrant      # Full VM test
+make lint             # Run linters
+```
+
+See [TESTING.md](TESTING.md) for detailed testing instructions.
+
 ### Running Tests
 
 ```bash
