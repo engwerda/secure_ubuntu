@@ -77,6 +77,7 @@
             user: "{{ user }}"
             state: present
             key: "{{ local_key }}"
+          when: not ansible_check_mode
 
         - name: Set secure permissions on user home
           ansible.builtin.file:
@@ -102,7 +103,9 @@
             state: present
             key: "{{ item.key }}"
           loop: "{{ additional_users }}"
-          when: additional_users is defined and additional_users | length > 0
+          when:
+            - additional_users is defined and additional_users | length > 0
+            - not ansible_check_mode
 
         - name: Set secure permissions on additional user homes
           ansible.builtin.file:
