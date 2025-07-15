@@ -197,6 +197,53 @@ GitHub Actions automatically:
 - Tests playbook syntax
 - Validates against multiple Ubuntu versions
 
+## Post-Setup Management
+
+### Adding SSH Keys to Existing Users
+
+After the initial setup, you can add additional SSH keys to existing users using the provided management tools:
+
+#### Using the convenience script (recommended):
+```bash
+# Add your default SSH key to the admin user
+./add-ssh-key.sh server.example.com
+
+# Add a specific key file to a user
+./add-ssh-key.sh server.example.com -u alice -f ~/.ssh/id_ed25519.pub
+
+# Add a key string directly
+./add-ssh-key.sh server.example.com -u bob -k 'ssh-rsa AAAAB3NzaC1yc2EA...'
+
+# List current keys for a user
+./add-ssh-key.sh server.example.com -u manager -l
+
+# Remove a key
+./add-ssh-key.sh server.example.com -u alice -r -k 'ssh-rsa AAAAB3NzaC1yc2EA...'
+```
+
+#### Using Ansible directly:
+```bash
+# Add a key
+ansible-playbook -i server.example.com, manage-ssh-keys.yml \
+  -e "target_user=manager ssh_key='ssh-rsa AAAAB3NzaC1yc2EA...'"
+
+# Add a key from file
+ansible-playbook -i server.example.com, manage-ssh-keys.yml \
+  -e "target_user=alice ssh_key_file=~/.ssh/id_ed25519.pub"
+
+# List keys
+ansible-playbook -i server.example.com, manage-ssh-keys.yml \
+  -e "key_action=list target_user=manager"
+
+# Remove a key
+ansible-playbook -i server.example.com, manage-ssh-keys.yml \
+  -e "key_action=remove target_user=alice ssh_key='ssh-rsa AAAAB3NzaC1yc2EA...'"
+```
+
+### Managing Users
+
+To add new users after the initial setup, update `vars/default.yml` with the new users in the `additional_users` list and run the playbook again. The playbook is idempotent and will only create users that don't already exist.
+
 ## Security Considerations
 
 - Always test in a non-production environment first

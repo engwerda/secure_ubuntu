@@ -1,0 +1,108 @@
+---
+# Comprehensive SSH key management playbook
+# Usage examples:
+#   Add key:    ansible-playbook -i inventory manage-ssh-keys.yml -e "key_action=add target_user=manager ssh_key='ssh-rsa AAAA...'"
+#   Remove key: ansible-playbook -i inventory manage-ssh-keys.yml -e "key_action=remove target_user=manager ssh_key='ssh-rsa AAAA...'"
+#   List keys:  ansible-playbook -i inventory manage-ssh-keys.yml -e "key_action=list target_user=manager"
+#   Add key from file: ansible-playbook -i inventory manage-ssh-keys.yml -e "key_action=add target_user=manager ssh_key_file=/path/to/key.pub"
+
+- name: Manage SSH keys for users
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    target_user: "{{ admin_user | default('manager') }}"
+    key_key_action: "add"  # Default key_action
+
+  tasks:
+    - name: Load SSH key from file if specified
+      ansible.builtin.set_fact:
+        ssh_key: "{{ lookup('file', ssh_key_file) }}"
+      when:
+        - ssh_key_file is defined
+        - key_action in ['add', 'remove']
+
+    - name: Validate required variables for add/remove
+      ansible.builtin.assert:
+        that:
+          - ssh_key is defined
+          - ssh_key | length > 0
+        fail_msg: "ssh_key or ssh_key_file must be provided for add/remove key_actions"
+      when: key_action in ['add', 'remove']
+
+    - name: Check if user exists
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ target_user }}"
+
+    - name: Add SSH key
+      ansible.posix.authorized_key:
+        user: "{{ target_user }}"
+        state: present
+        key: "{{ ssh_key }}"
+        comment: "Added by Ansible on {{ ansible_date_time.iso8601 }}"
+      register: add_result
+      when: key_action == 'add'
+
+    - name: Remove SSH key
+      ansible.posix.authorized_key:
+        user: "{{ target_user }}"
+        state: absent
+        key: "{{ ssh_key }}"
+      register: remove_result
+      when: key_action == 'remove'
+
+    - name: List current SSH keys
+      ansible.builtin.slurp:
+        src: "/home/{{ target_user }}/.ssh/authorized_keys"
+      register: current_keys
+      when: key_action == 'list'
+      failed_when: false
+
+    - name: Display add result
+      ansible.builtin.debug:
+        msg: |
+          ✅ SSH key has been added for user '{{ target_user }}'
+          Key type: {{ ssh_key.split()[0] }}
+          Key fingerprint: {{ ssh_key.split()[1][:20] }}...
+      when:
+        - key_action == 'add'
+        - add_result.changed
+
+    - name: Key already exists notification
+      ansible.builtin.debug:
+        msg: "ℹ️  This SSH key already exists for user '{{ target_user }}'"
+      when:
+        - key_action == 'add'
+        - not add_result.changed
+
+    - name: Display remove result
+      ansible.builtin.debug:
+        msg: "✅ SSH key has been removed from user '{{ target_user }}'"
+      when:
+        - key_action == 'remove'
+        - remove_result.changed
+
+    - name: Key not found notification
+      ansible.builtin.debug:
+        msg: "ℹ️  SSH key not found for user '{{ target_user }}'"
+      when:
+        - key_action == 'remove'
+        - not remove_result.changed
+
+    - name: Display current keys
+      ansible.builtin.debug:
+        msg: |
+          Current SSH keys for user '{{ target_user }}':
+          {{ current_keys.content | b64decode }}
+      when:
+        - key_action == 'list'
+        - current_keys.content is defined
+
+    - name: No keys found
+      ansible.builtin.debug:
+        msg: "No SSH keys found for user '{{ target_user }}'"
+      when:
+        - key_action == 'list'
+        - current_keys.failed | default(false)

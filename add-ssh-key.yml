@@ -1,0 +1,45 @@
+---
+# Playbook to add SSH keys to existing users
+# Usage: ansible-playbook -i inventory add-ssh-key.yml -e "target_user=manager ssh_key='ssh-rsa AAAA...'"
+
+- name: Add SSH key to user
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    target_user: "{{ admin_user | default('manager') }}"
+
+  tasks:
+    - name: Validate required variables
+      ansible.builtin.assert:
+        that:
+          - ssh_key is defined
+          - ssh_key | length > 0
+        fail_msg: "ssh_key variable must be provided. Use -e \"ssh_key='your-public-key'\""
+
+    - name: Check if user exists
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ target_user }}"
+
+    - name: Add SSH key to authorized_keys
+      ansible.posix.authorized_key:
+        user: "{{ target_user }}"
+        state: present
+        key: "{{ ssh_key }}"
+        comment: "Added on {{ ansible_date_time.iso8601 }}"
+      register: key_result
+
+    - name: Display result  # noqa: no-handler
+      ansible.builtin.debug:
+        msg: |
+          SSH key has been added for user '{{ target_user }}'
+          Key fingerprint: {{ ssh_key.split()[1][:20] }}...
+          Full key: {{ ssh_key }}
+      when: key_result.changed
+
+    - name: Key already exists
+      ansible.builtin.debug:
+        msg: "This SSH key already exists for user '{{ target_user }}'"
+      when: not key_result.changed
