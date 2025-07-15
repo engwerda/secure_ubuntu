@@ -61,7 +61,8 @@ jobs:
             sleep infinity
 
           docker exec test-ubuntu-${{ matrix.ubuntu-version }} bash -c \
-            "apt-get update && apt-get install -y python3 python3-apt sudo ansible"
+            "apt-get update && apt-get install -y python3 python3-pip python3-apt sudo && \
+             pip3 install ansible"
 
           docker exec test-ubuntu-${{ matrix.ubuntu-version }} bash -c \
             "cd /ansible && ansible-playbook -i localhost, -c local playbook.yml --check --diff"
