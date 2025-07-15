@@ -21,7 +21,7 @@
         name: auditd
         state: restarted
 
-    - name: reload sysctl
+    - name: reload sysctl  # noqa: no-changed-when
       ansible.builtin.command: sysctl -p /etc/sysctl.d/99-security-hardening.conf
 
   tasks:
