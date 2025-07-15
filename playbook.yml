@@ -10,20 +10,24 @@
       ansible.builtin.service:
         name: ssh
         state: restarted
+      when: not ansible_check_mode
 
     - name: restart fail2ban
       ansible.builtin.service:
         name: fail2ban
         state: restarted
+      when: not ansible_check_mode
 
     - name: restart auditd
       ansible.builtin.service:
         name: auditd
         state: restarted
+      when: not ansible_check_mode
 
     - name: reload sysctl
       ansible.builtin.shell: sysctl -p /etc/sysctl.d/99-security-hardening.conf
       changed_when: false
+      when: not ansible_check_mode
 
   tasks:
     # System Updates
