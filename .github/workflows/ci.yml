@@ -70,4 +70,4 @@ jobs:
           docker exec test-ubuntu-${{ matrix.ubuntu-version }} bash -c \
             "cd /ansible && ansible-galaxy collection install -r requirements.yml && \
              ansible-playbook -i localhost, -c local playbook.yml --check --diff \
-             -e admin_user_key='$(cat test_key.pub)'"
+             -e \"admin_user_key='$(cat test_key.pub)'\""
