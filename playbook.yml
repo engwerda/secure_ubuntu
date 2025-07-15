@@ -234,7 +234,13 @@
 
     # Fail2ban Configuration
     - name: Configure fail2ban
+      when: not (skip_docker_incompatible | default(false))
       block:
+        - name: Check if fail2ban is installed
+          ansible.builtin.stat:
+            path: /etc/fail2ban/jail.conf
+          register: fail2ban_conf
+
         - name: Create fail2ban configuration
           ansible.builtin.copy:
             src: /etc/fail2ban/jail.conf
@@ -243,6 +249,7 @@
             force: no
             mode: '0644'
           notify: restart fail2ban
+          when: fail2ban_conf.stat.exists
 
         - name: Configure fail2ban for SSH
           ansible.builtin.blockinfile:
@@ -255,6 +262,7 @@
               maxretry = {{ ssh_max_auth_tries }}
               bantime = 3600
               findtime = 600
+          when: fail2ban_conf.stat.exists
 
         - name: Enable and start fail2ban
           ansible.builtin.service:
