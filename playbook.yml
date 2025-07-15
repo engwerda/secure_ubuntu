@@ -23,7 +23,6 @@
 
     - name: reload sysctl
       ansible.builtin.command: sysctl -p /etc/sysctl.d/99-security-hardening.conf
-      changed_when: false
 
   tasks:
     # System Updates
