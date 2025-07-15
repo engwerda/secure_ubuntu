@@ -1,0 +1,19 @@
+---
+# Production-specific settings
+# Copy to group_vars/production.yml
+
+# Production team members
+additional_users:
+  - name: prod-lead
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... prod-lead@company.com"
+  - name: prod-oncall
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... oncall@company.com"
+
+# Stricter security for production
+ssh_max_auth_tries: 2
+ssh_client_alive_interval: 180
+
+# Production monitoring
+enable_auditd: true
+enable_aide: true
+enable_rkhunter: true

@@ -3,10 +3,26 @@
 .venv/
 __pycache__/
 *.pyc
+ansible.log
 
 ### Idea ###
 .idea
 
-
 ### Pyenv ###
 .python-version
+
+### Local Configuration ###
+# Don't commit local configuration overrides
+vars/local.yml
+host_vars/*
+!host_vars/*.example*
+group_vars/*
+!group_vars/*.example*
+inventory/*
+!inventory/*.example*
+
+# Personal SSH keys
+*.key
+*.pem
+id_rsa*
+id_ed25519*

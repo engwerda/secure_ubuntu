@@ -4,6 +4,7 @@
   become: true
   vars_files:
     - vars/default.yml
+    - "{{ playbook_dir }}/vars/local.yml"  # Optional - ignored if doesn't exist
 
   handlers:
     - name: restart ssh

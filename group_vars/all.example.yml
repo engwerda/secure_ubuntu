@@ -1,0 +1,44 @@
+---
+# Example group variables that apply to all servers
+# Copy this to group_vars/all.yml and customize
+
+# Company-wide admin user
+admin_user: ops-team
+admin_user_key: "{{ lookup('file', '~/.ssh/company_ops_key.pub') }}"
+
+# Standard users for all servers
+additional_users:
+  - name: monitoring
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... monitoring@company.com"
+  - name: backup
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... backup@company.com"
+
+# Company security policies
+ssh_port: 22
+ssh_max_auth_tries: 3
+ssh_client_alive_interval: 300
+ssh_client_alive_count_max: 2
+ssh_allow_tcp_forwarding: no
+ssh_allow_agent_forwarding: no
+
+# Standard firewall rules
+firewall_ssh_rate_limit: true
+firewall_allowed_ports:
+  - {port: 22, proto: tcp, comment: "SSH"}
+
+# Security features
+enable_auditd: true
+enable_aide: true
+enable_rkhunter: true
+disable_ipv6: true
+
+# Extra packages for all servers
+extra_packages:
+  - net-tools
+  - htop
+  - iotop
+  - tmux
+  - vim
+  - curl
+  - wget
+  - git

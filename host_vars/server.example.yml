@@ -1,0 +1,29 @@
+---
+# Example host-specific configuration
+# Copy this file to host_vars/<hostname>.yml for each server
+
+# Override the default admin user for this specific host
+admin_user: sysadmin
+admin_user_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... sysadmin@company.com"
+
+# Additional users for this specific server
+additional_users:
+  - name: alice
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... alice@company.com"
+  - name: bob
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... bob@company.com"
+
+# Server-specific SSH configuration
+ssh_port: 2222
+ssh_allow_tcp_forwarding: yes
+
+# Server-specific firewall rules
+firewall_allowed_ports:
+  - {port: 22, proto: tcp, comment: "SSH"}
+  - {port: 80, proto: tcp, comment: "HTTP"}
+  - {port: 443, proto: tcp, comment: "HTTPS"}
+  - {port: 3306, proto: tcp, comment: "MySQL"}
+
+# Disable certain features for this host
+enable_aide: false
+enable_rkhunter: false

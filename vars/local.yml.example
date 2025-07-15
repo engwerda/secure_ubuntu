@@ -1,0 +1,27 @@
+---
+# Local override configuration
+# Copy this to vars/local.yml and customize
+# This file is gitignored and won't be committed
+
+# Your personal settings
+admin_user: myusername
+admin_user_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+# Your team members
+additional_users:
+  - name: alice
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... alice@team.com"
+  - name: bob
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... bob@team.com"
+
+# Your preferred settings
+ssh_port: 22
+enable_aide: false  # Disable for faster testing
+
+# Development firewall rules
+firewall_allowed_ports:
+  - {port: 22, proto: tcp, comment: "SSH"}
+  - {port: 80, proto: tcp, comment: "HTTP"}
+  - {port: 443, proto: tcp, comment: "HTTPS"}
+  - {port: 3000, proto: tcp, comment: "Dev server"}
+  - {port: 8080, proto: tcp, comment: "Alt HTTP"}

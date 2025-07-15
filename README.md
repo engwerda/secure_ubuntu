@@ -68,7 +68,14 @@ The script automatically manages the virtual environment and installs dependenci
 
 ## Configuration Options
 
-Edit `vars/default.yml` to customize:
+See [CONFIGURATION.md](CONFIGURATION.md) for detailed configuration guide without modifying git-controlled files.
+
+Quick start:
+```bash
+./setup-config.sh  # Interactive configuration setup
+```
+
+Or edit `vars/default.yml` directly (not recommended for production):
 
 ### User Configuration
 - `admin_user`: Primary admin username (default: "manager")

@@ -1,0 +1,18 @@
+# Example inventory file
+# Copy this to inventory/hosts and customize for your servers
+
+[servers]
+# Production servers
+#prod-web-01 ansible_host=192.168.1.10
+#prod-web-02 ansible_host=192.168.1.11
+
+# Staging servers
+#staging-01 ansible_host=10.0.1.50
+
+# Development servers
+#dev-01 ansible_host=10.0.2.100
+
+[servers:vars]
+# Common variables for all servers
+ansible_user=root
+ansible_python_interpreter=/usr/bin/python3
