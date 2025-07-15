@@ -1,7 +1,21 @@
 ---
-# User configuration
-user: simon
-local_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_rsa.pub') }}"
+# Primary admin user (generic for server deployment)
+admin_user: manager
+admin_user_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_rsa.pub') }}"
+
+# Additional users (optional)
+# Set this variable to create multiple users with SSH access
+additional_users: []
+# Example:
+# additional_users:
+#   - name: simon
+#     key: "ssh-rsa AAAAB3NzaC1yc2EA... user@example.com"
+#   - name: alice
+#     key: "ssh-rsa AAAAB3NzaC1yc2EA... alice@example.com"
+
+# For backward compatibility
+user: "{{ admin_user }}"
+local_key: "{{ admin_user_key }}"
 
 # SSH configuration
 ssh_port: 22
@@ -11,7 +25,8 @@ ssh_max_auth_tries: 3
 ssh_max_sessions: 3
 ssh_client_alive_interval: 300
 ssh_client_alive_count_max: 2
-ssh_allow_users: "{{ user }}"
+# Automatically include all created users for SSH access
+ssh_allow_users: "{{ ([admin_user] + additional_users | map(attribute='name') | default([]) | list) | join(',') }}"
 ssh_allow_agent_forwarding: no
 ssh_allow_tcp_forwarding: no
 ssh_banner_path: /etc/issue.net

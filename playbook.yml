@@ -85,6 +85,34 @@
             owner: "{{ user }}"
             group: "{{ user }}"
 
+        - name: Create additional users
+          ansible.builtin.user:
+            name: "{{ item.name }}"
+            state: present
+            groups: wheel
+            append: true
+            create_home: true
+            shell: /bin/bash
+          loop: "{{ additional_users }}"
+          when: additional_users is defined and additional_users | length > 0
+
+        - name: Set authorized keys for additional users
+          ansible.posix.authorized_key:
+            user: "{{ item.name }}"
+            state: present
+            key: "{{ item.key }}"
+          loop: "{{ additional_users }}"
+          when: additional_users is defined and additional_users | length > 0
+
+        - name: Set secure permissions on additional user homes
+          ansible.builtin.file:
+            path: "/home/{{ item.name }}"
+            mode: '0750'
+            owner: "{{ item.name }}"
+            group: "{{ item.name }}"
+          loop: "{{ additional_users }}"
+          when: additional_users is defined and additional_users | length > 0
+
     # Kernel Hardening
     - name: Apply kernel security parameters
       block:

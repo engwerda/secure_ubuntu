@@ -23,7 +23,8 @@ A comprehensive Ansible playbook to quickly secure a fresh Ubuntu server install
 
 ### 🛠️ System Configuration
 
-- Creates secure sudo user with SSH key authentication
+- Creates secure admin user with SSH key authentication
+- Supports multiple user creation for team deployments
 - Configures automatic security updates via unattended-upgrades
 - Sets secure system limits and kernel parameters
 - Removes root password and disables root SSH access
@@ -70,8 +71,9 @@ The script automatically manages the virtual environment and installs dependenci
 Edit `vars/default.yml` to customize:
 
 ### User Configuration
-- `user`: Username for the new sudo user (default: "simon")
-- `local_key`: SSH public key path (default: ~/.ssh/id_rsa.pub)
+- `admin_user`: Primary admin username (default: "manager")
+- `admin_user_key`: SSH public key for admin user (default: ~/.ssh/id_rsa.pub)
+- `additional_users`: List of additional users to create (optional)
 
 ### SSH Configuration
 - `ssh_port`: SSH port (default: 22)
@@ -89,6 +91,43 @@ Edit `vars/default.yml` to customize:
 - `enable_auditd`: Enable system auditing (default: true)
 - `enable_rkhunter`: Enable rootkit detection (default: true)
 - `disable_ipv6`: Disable IPv6 if not needed (default: true)
+
+## Configuration Examples
+
+### Single User Deployment (Default)
+```yaml
+# Uses default "manager" user with your SSH key
+# No changes needed to vars/default.yml
+```
+
+### Team Deployment
+```yaml
+# vars/default.yml
+admin_user: manager
+admin_user_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_rsa.pub') }}"
+
+additional_users:
+  - name: alice
+    key: "ssh-rsa AAAAB3NzaC1yc2EA... alice@company.com"
+  - name: bob
+    key: "ssh-rsa AAAAB3NzaC1yc2EA... bob@company.com"
+  - name: charlie
+    key: "ssh-rsa AAAAB3NzaC1yc2EA... charlie@company.com"
+```
+
+### Personal Server
+```yaml
+# vars/default.yml
+admin_user: myusername
+admin_user_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_rsa.pub') }}"
+# No additional users needed
+```
+
+All users automatically get:
+- Sudo access via wheel group
+- SSH access with their keys
+- Secure home directory permissions
+- Protection under all security policies
 
 ## Security Features Details
 
