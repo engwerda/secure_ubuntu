@@ -85,6 +85,7 @@
             mode: '0750'
             owner: "{{ user }}"
             group: "{{ user }}"
+          when: not ansible_check_mode
 
         - name: Create additional users
           ansible.builtin.user:
@@ -114,7 +115,9 @@
             owner: "{{ item.name }}"
             group: "{{ item.name }}"
           loop: "{{ additional_users }}"
-          when: additional_users is defined and additional_users | length > 0
+          when:
+            - additional_users is defined and additional_users | length > 0
+            - not ansible_check_mode
 
     # Kernel Hardening
     - name: Apply kernel security parameters
