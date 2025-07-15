@@ -16,163 +16,315 @@
         name: fail2ban
         state: restarted
 
-  tasks:
-    # Install aptitude.
-    - name: Install aptitude
-      ansible.builtin.apt:
-        name: aptitude
-        update_cache: yes
-        state: latest
-        force_apt_get: yes
+    - name: restart auditd
+      ansible.builtin.service:
+        name: auditd
+        state: restarted
 
-    # Apt update
-    - name: Update apt packages
+    - name: reload sysctl
+      ansible.builtin.command: sysctl -p /etc/sysctl.d/99-security-hardening.conf
+      changed_when: false
+
+  tasks:
+    # System Updates
+    - name: Update and upgrade system packages
+      block:
+        - name: Install aptitude
+          ansible.builtin.apt:
+            name: aptitude
+            state: present
+            update_cache: yes
+            cache_valid_time: 3600
+
+        - name: Upgrade all packages
+          ansible.builtin.apt:
+            upgrade: dist
+            update_cache: yes
+            cache_valid_time: 3600
+
+    # User Management
+    - name: Configure sudo and user access
+      block:
+        - name: Install sudo package
+          ansible.builtin.package:
+            name: sudo
+            state: present
+
+        - name: Ensure wheel group exists
+          ansible.builtin.group:
+            name: wheel
+            state: present
+
+        - name: Allow wheel group passwordless sudo
+          ansible.builtin.lineinfile:
+            path: /etc/sudoers
+            state: present
+            regexp: '^%wheel'
+            line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+            validate: '/usr/sbin/visudo -cf %s'
+
+        - name: Create secure user
+          ansible.builtin.user:
+            name: "{{ user }}"
+            state: present
+            groups: wheel
+            append: true
+            create_home: true
+            shell: /bin/bash
+
+        - name: Set authorized key for user
+          ansible.posix.authorized_key:
+            user: "{{ user }}"
+            state: present
+            key: "{{ local_key }}"
+
+        - name: Set secure permissions on user home
+          ansible.builtin.file:
+            path: "/home/{{ user }}"
+            mode: '0750'
+            owner: "{{ user }}"
+            group: "{{ user }}"
+
+    # Kernel Hardening
+    - name: Apply kernel security parameters
+      block:
+        - name: Deploy sysctl security configuration
+          ansible.builtin.template:
+            src: 99-security-hardening.conf.j2
+            dest: /etc/sysctl.d/99-security-hardening.conf
+            owner: root
+            group: root
+            mode: '0644'
+          notify: reload sysctl
+
+        - name: Apply sysctl settings immediately
+          ansible.builtin.command: sysctl -p /etc/sysctl.d/99-security-hardening.conf
+          changed_when: false
+
+    # SSH Hardening
+    - name: Secure SSH configuration
+      block:
+        - name: Generate SSH host keys if missing
+          ansible.builtin.command: ssh-keygen -A
+          args:
+            creates: /etc/ssh/ssh_host_ed25519_key
+
+        - name: Deploy secure SSH configuration
+          ansible.builtin.template:
+            src: sshd_config.j2
+            dest: /etc/ssh/sshd_config
+            owner: root
+            group: root
+            mode: '0600'
+            validate: '/usr/sbin/sshd -t -f %s'
+          notify: restart ssh
+
+        - name: Deploy SSH banner
+          ansible.builtin.template:
+            src: issue.net.j2
+            dest: /etc/issue.net
+            owner: root
+            group: root
+            mode: '0644'
+
+    # Firewall Configuration
+    - name: Configure UFW firewall
+      block:
+        - name: Install UFW
+          ansible.builtin.apt:
+            name: ufw
+            state: present
+
+        - name: Configure UFW defaults
+          community.general.ufw:
+            direction: "{{ item.direction }}"
+            policy: "{{ item.policy }}"
+          loop:
+            - { direction: incoming, policy: deny }
+            - { direction: outgoing, policy: allow }
+
+        - name: Configure UFW rules
+          community.general.ufw:
+            rule: "{{ item.rule | default('allow') }}"
+            port: "{{ item.port }}"
+            proto: "{{ item.proto }}"
+            comment: "{{ item.comment | default('') }}"
+          loop: "{{ firewall_allowed_ports }}"
+
+        - name: Add SSH rate limiting
+          community.general.ufw:
+            rule: limit
+            port: "{{ ssh_port }}"
+            proto: tcp
+            comment: "SSH rate limiting"
+          when: firewall_ssh_rate_limit
+
+        - name: Enable UFW logging
+          community.general.ufw:
+            logging: 'on'
+
+        - name: Enable UFW
+          community.general.ufw:
+            state: enabled
+
+    # Security Tools Installation
+    - name: Install security packages
       ansible.builtin.apt:
+        name: "{{ security_packages }}"
+        state: present
         update_cache: yes
-        force_apt_get: yes
         cache_valid_time: 3600
 
-    # Apt upgrade
-    - name: Upgrade all packages on server
-      ansible.builtin.apt:
-        upgrade: dist
-        force_apt_get: yes
+    # Auditd Configuration
+    - name: Configure auditd
+      block:
+        - name: Deploy audit rules
+          ansible.builtin.template:
+            src: audit.rules.j2
+            dest: /etc/audit/rules.d/hardening.rules
+            owner: root
+            group: root
+            mode: '0600'
+          notify: restart auditd
+          when: enable_auditd
 
-    # make sure the sudo package is installed
-    - name: Install the `sudo` package
-      ansible.builtin.package:
-        name: sudo
-        state: latest
+        - name: Enable and start auditd
+          ansible.builtin.service:
+            name: auditd
+            enabled: yes
+            state: started
+          when: enable_auditd
 
-    # Sudo Group Setup
-    - name: Make sure we have a 'wheel' group
-      ansible.builtin.group:
-        name: wheel
-        state: present
+    # Fail2ban Configuration
+    - name: Configure fail2ban
+      block:
+        - name: Create fail2ban configuration
+          ansible.builtin.copy:
+            src: /etc/fail2ban/jail.conf
+            dest: /etc/fail2ban/jail.local
+            remote_src: yes
+            force: no
+            mode: '0644'
+          notify: restart fail2ban
 
-    - name: Allow 'wheel' group to have passwordless sudo
-      ansible.builtin.lineinfile:
-        path: /etc/sudoers
-        state: present
-        regexp: '^%wheel'
-        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
-        validate: '/usr/sbin/visudo -cf %s'
+        - name: Configure fail2ban for SSH
+          ansible.builtin.blockinfile:
+            path: /etc/fail2ban/jail.local
+            marker: "# {mark} ANSIBLE MANAGED SSH JAIL"
+            block: |
+              [sshd]
+              enabled = true
+              port = {{ ssh_port }}
+              maxretry = {{ ssh_max_auth_tries }}
+              bantime = 3600
+              findtime = 600
 
-    # User Setup
-    - name: Create a new regular user with sudo privileges
-      ansible.builtin.user:
-        name: "{{ user }}"
-        state: present
-        groups: wheel
-        append: true
-        create_home: true
-        shell: /bin/bash
+        - name: Enable and start fail2ban
+          ansible.builtin.service:
+            name: fail2ban
+            enabled: yes
+            state: started
 
-    - name: Set authorized key for remote user
-      ansible.posix.authorized_key:
-        user: "{{ user }}"
-        state: present
-        key: "{{ local_key }}"
+    # Unattended Upgrades
+    - name: Configure unattended upgrades
+      block:
+        - name: Install unattended-upgrades
+          ansible.builtin.apt:
+            name: unattended-upgrades
+            state: present
 
-    # UFW Setup
-    - name: Make sure ufw is installed
-      ansible.builtin.apt:
-        pkg: ufw
-        state: latest
+        - name: Configure automatic updates
+          ansible.builtin.copy:
+            src: templates/10periodic
+            dest: /etc/apt/apt.conf.d/10periodic
+            owner: root
+            group: root
+            mode: '0644'
 
-    - name: UFW - Allow SSH connections on tcp port 22
-      community.general.ufw:
-        rule: allow
-        port: '22'
-        proto: tcp
+        - name: Enable unattended upgrades
+          ansible.builtin.lineinfile:
+            path: /etc/apt/apt.conf.d/50unattended-upgrades
+            regexp: '^//\s*"\${distro_id}:\${distro_codename}-security";'
+            line: '        "${distro_id}:${distro_codename}-security";'
 
-    - name: UFW - Deny all other incoming traffic by default
-      community.general.ufw:
-        state: enabled
-        policy: deny
-        direction: incoming
+    # AIDE Configuration
+    - name: Configure AIDE
+      block:
+        - name: Initialize AIDE database
+          ansible.builtin.command: aideinit
+          args:
+            creates: /var/lib/aide/aide.db.new
+          when: enable_aide
 
-    - name: Set ufw logging to on.
-      community.general.ufw:
-        logging: 'on'
+        - name: Move AIDE database
+          ansible.builtin.command: mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+          args:
+            creates: /var/lib/aide/aide.db
+          when: enable_aide
 
-    # Setup unattended upgrades
-    - name: Install unattended-upgrades package
-      ansible.builtin.apt:
-        name: unattended-upgrades
-        update_cache: yes
-
-    - name: Enable periodic updates
-      ansible.builtin.copy:
-        src: templates/10periodic
-        dest: /etc/apt/apt.conf.d/10periodic
-        owner: root
-        group: root
-        mode: '0644'
-
-    # Fail2ban
-    - name: Make sure fail2ban is installed
-      ansible.builtin.apt:
-        pkg: fail2ban
-        state: latest
-
-    - name: Set up fail2ban
-      ansible.builtin.command:
-        cmd: cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-        creates: /etc/fail2ban/jail.local
-      notify: restart fail2ban
-
-    - name: Make sure fail2ban is enabled
-      ansible.builtin.service:
-        name: fail2ban
-        enabled: yes
-
-    # Install extra Packages
-    - name: Update apt
-      ansible.builtin.apt:
-        update_cache: yes
-
-    - name: Install required system packages
+    # Extra Packages
+    - name: Install additional packages
       ansible.builtin.apt:
         name: "{{ extra_packages }}"
-        state: latest
+        state: present
 
-    # set ulimit
-    - name: configure system settings, file descriptors and number of threads
+    # System Limits
+    - name: Configure system limits
       community.general.pam_limits:
         domain: "{{ user }}"
         limit_type: "{{ item.limit_type }}"
         limit_item: "{{ item.limit_item }}"
         value: "{{ item.value }}"
-      with_items:
+      loop:
         - { limit_type: '-', limit_item: 'nofile', value: 65536 }
         - { limit_type: '-', limit_item: 'nproc', value: 65536 }
         - { limit_type: 'soft', limit_item: 'memlock', value: unlimited }
         - { limit_type: 'hard', limit_item: 'memlock', value: unlimited }
 
-    # reload ulimit config
-    - name: Reload settings from all system configuration files
-      ansible.builtin.shell: sysctl --system
-      changed_when: true
+    # Final Security Steps
+    - name: Apply final security configurations
+      block:
+        - name: Check if root has password
+          ansible.builtin.shell: |
+            set -o pipefail
+            passwd -S root | grep -E '^root\s+P\s+'
+          args:
+            executable: /bin/bash
+          register: root_password_status
+          changed_when: false
+          failed_when: false
 
-    # Delete root password.
-    - name: Delete root password
-      ansible.builtin.shell: passwd -d root
-      changed_when: true
+        - name: Delete root password
+          ansible.builtin.user:
+            name: root
+            password: '!'
+          when: root_password_status.rc == 0
 
-    # Disable ssh password authentication
-    - name: Disallow ssh password authentication
-      ansible.builtin.lineinfile:
-        dest: /etc/ssh/sshd_config
-        regexp: "^PasswordAuthentication"
-        line: "PasswordAuthentication no"
-        state: present
+        - name: Disable root SSH login
+          ansible.builtin.lineinfile:
+            path: /etc/ssh/sshd_config
+            state: present
+            regexp: '^#?PermitRootLogin'
+            line: 'PermitRootLogin no'
+          notify: restart ssh
 
-    # Disable ssh login for root.
-    - name: Disable ssh login for root.
-      ansible.builtin.lineinfile:
-        path: /etc/ssh/sshd_config
-        state: present
-        regexp: '^#?PermitRootLogin'
-        line: 'PermitRootLogin no'
-      notify: restart ssh
+        - name: Disable password authentication
+          ansible.builtin.lineinfile:
+            path: /etc/ssh/sshd_config
+            regexp: '^#?PasswordAuthentication'
+            line: 'PasswordAuthentication no'
+            state: present
+          notify: restart ssh
+
+    # AppArmor
+    - name: Ensure AppArmor is enabled
+      ansible.builtin.service:
+        name: apparmor
+        enabled: yes
+        state: started
+
+    # System Cleanup
+    - name: Remove unnecessary packages
+      ansible.builtin.apt:
+        autoclean: yes
+        autoremove: yes

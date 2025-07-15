@@ -1,0 +1,52 @@
+# {{ ansible_managed }}
+# Secure SSH configuration
+
+# Basic configuration
+Port {{ ssh_port | default(22) }}
+Protocol 2
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Logging
+SyslogFacility AUTH
+LogLevel {{ ssh_log_level | default('INFO') }}
+
+# Authentication
+LoginGraceTime {{ ssh_login_grace_time | default('60') }}
+PermitRootLogin no
+StrictModes yes
+MaxAuthTries {{ ssh_max_auth_tries | default('3') }}
+MaxSessions {{ ssh_max_sessions | default('3') }}
+
+# Password authentication
+PubkeyAuthentication yes
+PasswordAuthentication no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+
+# Security settings
+IgnoreRhosts yes
+HostbasedAuthentication no
+PermitUserEnvironment no
+AllowUsers {{ ssh_allow_users | default(user) }}
+
+# Forwarding
+X11Forwarding no
+AllowAgentForwarding {{ ssh_allow_agent_forwarding | default('no') }}
+AllowTcpForwarding {{ ssh_allow_tcp_forwarding | default('no') }}
+PermitTunnel no
+
+# Idle timeout
+ClientAliveInterval {{ ssh_client_alive_interval | default('300') }}
+ClientAliveCountMax {{ ssh_client_alive_count_max | default('2') }}
+
+# Ciphers and algorithms (secure defaults)
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256
+
+# Override default of no subsystems
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+# Banner
+Banner {{ ssh_banner_path | default('/etc/issue.net') }}

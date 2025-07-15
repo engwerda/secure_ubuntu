@@ -1,28 +1,42 @@
-# Initial Server Setup
+# Ubuntu Server Hardening Ansible Playbook
 
-Playbook to quickly secure an Ubuntu server within the first 5 minutes.
-- Make sure all packages are up date.
-- Create a new regular user with sudo privileges.
-- Add ssh key for sudo user.
-- Enable UFW and only allow SSH on tcp port 22 block all other ports.
-- Install and enable Fail2ban.
-- Install extra packages.
-- Delete root password and disable SSH loging for root.
+[![CI](https://github.com/engwerda/secure_ubuntu/actions/workflows/ci.yml/badge.svg)](https://github.com/engwerda/secure_ubuntu/actions/workflows/ci.yml)
 
-Tested with Ubuntu 20.04 and later versions.
+A comprehensive Ansible playbook to quickly secure a fresh Ubuntu server installation with industry-standard security hardening practices.
 
-Requirements:
+## Features
+
+### 🔒 Security Hardening
+
+- **Kernel Hardening**: Applies secure sysctl parameters for network stack protection, memory security, and system hardening
+- **SSH Hardening**: Implements secure SSH configuration with:
+  - Strong ciphers and key exchange algorithms
+  - Rate limiting and connection restrictions
+  - Configurable port and authentication settings
+  - Security banner display
+- **Firewall Protection**: UFW with rate limiting and customizable rules
+- **Intrusion Detection**: Fail2ban with automatic IP blocking
+- **Security Monitoring**: Auditd for comprehensive system auditing
+- **File Integrity**: AIDE for detecting unauthorized file changes
+- **Rootkit Detection**: rkhunter for malware scanning
+- **Mandatory Access Control**: AppArmor enabled and configured
+
+### 🛠️ System Configuration
+
+- Creates secure sudo user with SSH key authentication
+- Configures automatic security updates via unattended-upgrades
+- Sets secure system limits and kernel parameters
+- Removes root password and disables root SSH access
+- Implements secure mount options (planned)
+
+## Requirements
+
+- Ubuntu 20.04, 22.04, or 24.04
 - Python 3.10 or higher
 - Ansible 9.0.0 or higher
+- SSH access to target server as root (for initial setup)
 
-## Settings
-
-- `user`: the name of the remote sudo user to create.
-- `local_key`: path to a local SSH public key that will be copied as authorized key for the new user. By default, it copies the key from the current system user running Ansible.
-- `extra_packages`: array with list of packages that should be installed.
-
-
-## Running this Playbook
+## Quick Start
 
 ### Prerequisites
 
@@ -31,24 +45,119 @@ Install uv (Python package manager):
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Customize Options
+### Installation
 
-```shell
+1. Clone the repository:
+```bash
+git clone https://github.com/engwerda/secure_ubuntu.git
+cd secure_ubuntu
+```
+
+2. Customize configuration:
+```bash
 vim vars/default.yml
 ```
 
-```yml
-#vars/default.yml
----
-user: simon
-local_key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
-extra_packages: [ 'vim', 'git', 'ufw']
+3. Run the playbook:
+```bash
+./run.sh <target-host>
 ```
 
-### Run
+The script automatically manages the virtual environment and installs dependencies.
 
-```command
-./run.sh <host>
+## Configuration Options
+
+Edit `vars/default.yml` to customize:
+
+### User Configuration
+- `user`: Username for the new sudo user (default: "simon")
+- `local_key`: SSH public key path (default: ~/.ssh/id_rsa.pub)
+
+### SSH Configuration
+- `ssh_port`: SSH port (default: 22)
+- `ssh_max_auth_tries`: Maximum authentication attempts (default: 3)
+- `ssh_client_alive_interval`: Idle timeout in seconds (default: 300)
+- `ssh_allow_users`: Users allowed SSH access
+- `ssh_allow_tcp_forwarding`: Enable/disable TCP forwarding
+
+### Firewall Configuration
+- `firewall_ssh_rate_limit`: Enable SSH rate limiting (default: true)
+- `firewall_allowed_ports`: List of allowed ports/services
+
+### Security Features
+- `enable_aide`: Enable file integrity monitoring (default: true)
+- `enable_auditd`: Enable system auditing (default: true)
+- `enable_rkhunter`: Enable rootkit detection (default: true)
+- `disable_ipv6`: Disable IPv6 if not needed (default: true)
+
+## Security Features Details
+
+### Kernel Hardening
+- Network stack protection against spoofing and SYN floods
+- Memory protection with ASLR and restricted core dumps
+- Restricted kernel pointer access
+- Protected symbolic and hard links
+
+### SSH Security
+- Modern cipher suites only
+- Public key authentication enforced
+- Rate limiting on connections
+- Automatic idle session termination
+- Host-based authentication disabled
+
+### Audit Rules
+- Monitors authentication changes
+- Tracks sudo usage and configuration
+- Records system calls and privileged commands
+- Monitors file deletions and modifications
+- Immutable audit configuration
+
+## Development
+
+### Running Tests
+
+```bash
+# Install development dependencies
+uv pip install -e ".[dev]"
+
+# Run pre-commit hooks
+pre-commit run --all-files
+
+# Run specific linters
+yamllint .
+ansible-lint
 ```
 
-The script will automatically create a virtual environment and install dependencies on first run.
+### CI/CD
+
+GitHub Actions automatically:
+- Runs linting checks (yamllint, ansible-lint)
+- Tests playbook syntax
+- Validates against multiple Ubuntu versions
+
+## Security Considerations
+
+- Always test in a non-production environment first
+- Ensure you have an alternative access method before running
+- Review all configuration options for your environment
+- Keep the playbook and dependencies updated
+- Monitor logs after implementation
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run pre-commit hooks
+5. Submit a pull request
+
+## License
+
+[Your chosen license]
+
+## Acknowledgments
+
+Based on CIS benchmarks and security best practices from:
+- Center for Internet Security (CIS)
+- NIST Guidelines
+- Ubuntu Security Guide

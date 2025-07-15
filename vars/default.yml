@@ -1,4 +1,51 @@
 ---
+# User configuration
 user: simon
 local_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_rsa.pub') }}"
-extra_packages: ['curl', 'vim', 'git', 'ufw', 'dfc', 'net-tools']
+
+# SSH configuration
+ssh_port: 22
+ssh_log_level: INFO
+ssh_login_grace_time: 60
+ssh_max_auth_tries: 3
+ssh_max_sessions: 3
+ssh_client_alive_interval: 300
+ssh_client_alive_count_max: 2
+ssh_allow_users: "{{ user }}"
+ssh_allow_agent_forwarding: no
+ssh_allow_tcp_forwarding: no
+ssh_banner_path: /etc/issue.net
+
+# Firewall configuration
+firewall_ssh_rate_limit: true
+firewall_ssh_rate_limit_rule: "6/minute"
+firewall_allowed_ports:
+  - { port: 22, proto: tcp, comment: "SSH" }
+
+# Kernel hardening
+disable_ipv6: true
+
+# Package lists
+extra_packages:
+  - curl
+  - vim
+  - git
+  - ufw
+  - dfc
+  - net-tools
+  - htop
+  - iotop
+
+security_packages:
+  - fail2ban
+  - unattended-upgrades
+  - aide
+  - auditd
+  - audispd-plugins
+  - rkhunter
+  - apparmor-utils
+
+# Security settings
+enable_aide: true
+enable_auditd: true
+enable_rkhunter: true

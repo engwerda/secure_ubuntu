@@ -1,0 +1,57 @@
+# {{ ansible_managed }}
+# Audit rules for security monitoring
+
+# Remove any existing rules
+-D
+
+# Buffer Size
+-b 8192
+
+# Failure Mode
+-f 1
+
+# Monitor authentication
+-w /etc/passwd -p wa -k passwd_changes
+-w /etc/shadow -p wa -k shadow_changes
+-w /etc/group -p wa -k group_changes
+-w /etc/gshadow -p wa -k gshadow_changes
+-w /etc/security/ -p wa -k security_changes
+
+# Monitor sudo configuration
+-w /etc/sudoers -p wa -k sudoers_changes
+-w /etc/sudoers.d/ -p wa -k sudoers_changes
+
+# Monitor SSH configuration
+-w /etc/ssh/sshd_config -p wa -k sshd_config_changes
+
+# Monitor system calls
+-a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time_change
+-a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time_change
+-a always,exit -F arch=b64 -S clock_settime -k time_change
+-a always,exit -F arch=b32 -S clock_settime -k time_change
+
+# Monitor user/group modifications
+-a always,exit -F arch=b64 -S usermod -S groupmod -k user_group_modification
+-a always,exit -F arch=b32 -S usermod -S groupmod -k user_group_modification
+
+# Monitor mount operations
+-a always,exit -F arch=b64 -S mount -S umount2 -k mount_operations
+-a always,exit -F arch=b32 -S mount -S umount -S umount2 -k mount_operations
+
+# Monitor file deletions
+-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete
+-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete
+
+# Monitor kernel module operations
+-w /sbin/insmod -p x -k modules
+-w /sbin/rmmod -p x -k modules
+-w /sbin/modprobe -p x -k modules
+-a always,exit -F arch=b64 -S init_module -S delete_module -k modules
+
+# Monitor privileged commands
+-a always,exit -F path=/usr/bin/passwd -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged
+-a always,exit -F path=/usr/bin/su -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged
+
+# Make configuration immutable
+-e 2
