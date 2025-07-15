@@ -354,6 +354,11 @@
             password: '!'
           when: root_password_status.rc == 0
 
+        - name: Check if SSH config exists
+          ansible.builtin.stat:
+            path: /etc/ssh/sshd_config
+          register: ssh_config
+
         - name: Disable root SSH login
           ansible.builtin.lineinfile:
             path: /etc/ssh/sshd_config
@@ -361,6 +366,7 @@
             regexp: '^#?PermitRootLogin'
             line: 'PermitRootLogin no'
           notify: restart ssh
+          when: ssh_config.stat.exists
 
         - name: Disable password authentication
           ansible.builtin.lineinfile:
@@ -369,6 +375,7 @@
             line: 'PasswordAuthentication no'
             state: present
           notify: restart ssh
+          when: ssh_config.stat.exists
 
     # AppArmor
     - name: Ensure AppArmor is enabled
