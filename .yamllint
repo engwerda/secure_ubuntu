@@ -1,0 +1,49 @@
+---
+# Yamllint configuration for Ansible projects
+extends: default
+
+rules:
+  # Allow longer lines for Ansible tasks with many parameters
+  line-length:
+    max: 260
+    level: warning
+
+  # Be explicit about truthy values in Ansible
+  truthy:
+    allowed-values: ["true", "false", "yes", "no"]
+    check-keys: true
+
+  # Ensure consistent spacing in comments
+  comments:
+    min-spaces-from-content: 1
+
+  # Required by ansible-lint
+  comments-indentation: false
+
+  # Ansible-specific indentation
+  indentation:
+    spaces: 2
+    indent-sequences: true
+
+  # Allow brackets in Ansible variable syntax
+  brackets:
+    forbid: false
+
+  # Braces configuration required by ansible-lint
+  braces:
+    max-spaces-inside: 1
+
+  # Don't require document start markers
+  document-start:
+    present: false
+
+  # Empty lines configuration
+  empty-lines:
+    max: 1
+    max-start: 0
+    max-end: 1
+
+  # Octal values configuration required by ansible-lint
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true

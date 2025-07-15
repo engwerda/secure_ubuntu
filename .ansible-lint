@@ -1,0 +1,30 @@
+---
+# Ansible-lint configuration
+profile: production
+
+exclude_paths:
+  - .cache/
+  - .github/
+  - .venv/
+  - uv.lock
+
+# Skip specific directories that don't contain playbooks
+skip_list:
+  - yaml[line-length]  # Allow long lines in YAML files
+  - yaml[document-start]  # Don't require --- at start
+  - package-latest  # Allow using latest for security updates
+  - name[casing]  # Allow lowercase handler names
+
+# Warn about these but don't fail
+warn_list:
+  - command-instead-of-module  # Sometimes shell/command is necessary
+  - no-changed-when  # For idempotent shell commands
+  - command-instead-of-shell  # Sometimes shell is needed
+
+# Enable additional rules
+enable_list:
+  - fqcn  # Require fully qualified collection names
+  - no-free-form  # Require proper module syntax
+
+# Task name conventions
+task_name_prefix: "{stem} | "
