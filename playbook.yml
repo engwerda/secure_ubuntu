@@ -2,9 +2,18 @@
 - name: Initial Ubuntu Server Hardening
   hosts: all
   become: true
-  vars_files:
-    - vars/default.yml
-    - "{{ playbook_dir }}/vars/local.yml"  # Optional - ignored if doesn't exist
+
+  pre_tasks:
+    - name: Load default variables
+      ansible.builtin.include_vars: vars/default.yml
+
+    - name: Load local configuration if it exists
+      ansible.builtin.include_vars: "{{ item }}"
+      with_first_found:
+        - files:
+            - "{{ playbook_dir }}/vars/local.yml"
+            - "{{ playbook_dir }}/vars/local.yaml"
+          skip: true
 
   handlers:
     - name: restart ssh
@@ -26,7 +35,7 @@
       when: not ansible_check_mode
 
     - name: reload sysctl
-      ansible.builtin.shell: sysctl -p /etc/sysctl.d/99-security-hardening.conf
+      ansible.builtin.command: sysctl -p /etc/sysctl.d/99-security-hardening.conf
       changed_when: false
       when: not ansible_check_mode
 
