@@ -3,7 +3,7 @@
 Playbook to quickly secure an Ubuntu server within the first 5 minutes.
 - Make sure all packages are up date.
 - Create a new regular user with sudo privileges.
-- Add ssh key for sudo user. 
+- Add ssh key for sudo user.
 - Enable UFW and only allow SSH on tcp port 22 block all other ports.
 - Install and enable Fail2ban.
 - Install extra packages.
