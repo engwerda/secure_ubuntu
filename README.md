@@ -269,7 +269,7 @@ To add new users after the initial setup, update `vars/default.yml` with the new
 
 ## License
 
-[Your chosen license]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
