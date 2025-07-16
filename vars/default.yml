@@ -64,3 +64,4 @@ security_packages:
 enable_aide: true
 enable_auditd: true
 enable_rkhunter: true
+initialize_aide: true  # Set to false to skip AIDE database initialization (can be done manually later)

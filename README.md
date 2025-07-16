@@ -112,6 +112,7 @@ Or edit `vars/default.yml` directly (not recommended for production):
 - `enable_auditd`: Enable system auditing (default: true)
 - `enable_rkhunter`: Enable rootkit detection (default: true)
 - `disable_ipv6`: Disable IPv6 if not needed (default: true)
+- `initialize_aide`: Initialize AIDE database during setup (default: true, set to false to skip)
 
 ## Configuration Examples
 
@@ -264,6 +265,23 @@ ansible-playbook -i server.example.com, manage-ssh-keys.yml \
 ### Managing Users
 
 To add new users after the initial setup, update `vars/default.yml` with the new users in the `additional_users` list and run the playbook again. The playbook is idempotent and will only create users that don't already exist.
+
+### AIDE Database Initialization
+
+If you skip AIDE initialization during setup (by setting `initialize_aide: false`), you can manually initialize it later:
+
+```bash
+# Initialize AIDE database (this can take 10-60 minutes)
+sudo aideinit
+
+# Move the new database into place
+sudo mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+
+# Run initial integrity check
+sudo aide --check
+```
+
+It's recommended to run initialization during low-traffic periods as it's I/O intensive.
 
 ## Security Considerations
 

@@ -317,17 +317,25 @@
     - name: Configure AIDE
       when: not (skip_docker_incompatible | default(false))
       block:
+        - name: Display AIDE initialization notice
+          ansible.builtin.debug:
+            msg: "AIDE is installed but database initialization is skipped. Run 'sudo aideinit' manually to initialize."
+          when: enable_aide and not (initialize_aide | default(true))
+
         - name: Initialize AIDE database
           ansible.builtin.command: aideinit
           args:
             creates: /var/lib/aide/aide.db.new
-          when: enable_aide
+          when: enable_aide and (initialize_aide | default(true))
+          register: aide_init
+          async: 3600  # Allow up to 1 hour
+          poll: 30      # Check every 30 seconds
 
         - name: Move AIDE database
           ansible.builtin.command: mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
           args:
             creates: /var/lib/aide/aide.db
-          when: enable_aide
+          when: enable_aide and (initialize_aide | default(true))
 
     # Extra Packages
     - name: Install additional packages
