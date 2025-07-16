@@ -32,8 +32,8 @@ AllowUsers {{ ssh_allow_users | default(user) }}
 
 # Forwarding
 X11Forwarding no
-AllowAgentForwarding {{ ssh_allow_agent_forwarding | default('no') }}
-AllowTcpForwarding {{ ssh_allow_tcp_forwarding | default('no') }}
+AllowAgentForwarding {{ 'yes' if (ssh_allow_agent_forwarding | default(false) | bool) else 'no' }}
+AllowTcpForwarding {{ 'yes' if (ssh_allow_tcp_forwarding | default(false) | bool) else 'no' }}
 PermitTunnel no
 
 # Idle timeout
