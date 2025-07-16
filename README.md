@@ -80,6 +80,11 @@ vim vars/default.yml
 
 The script automatically manages the virtual environment and installs dependencies.
 
+**Note**: The initial run connects as root. For subsequent runs after the server is secured, create an inventory file (see `inventory/hosts.example`) with `ansible_user=manager` or use:
+```bash
+ansible-playbook -i <target-host>, -u manager playbook.yml
+```
+
 ## Configuration Options
 
 See [CONFIGURATION.md](CONFIGURATION.md) for detailed configuration guide without modifying git-controlled files.

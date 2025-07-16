@@ -14,5 +14,12 @@
 
 [servers:vars]
 # Common variables for all servers
-ansible_user=root
+# For initial setup, use root:
+# ansible_user=root
+
+# After initial setup, use your admin user:
+ansible_user=manager
 ansible_python_interpreter=/usr/bin/python3
+
+# If using SSH key authentication after setup:
+# ansible_ssh_private_key_file=~/.ssh/id_ed25519
