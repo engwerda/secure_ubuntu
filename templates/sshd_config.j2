@@ -18,17 +18,19 @@ StrictModes yes
 MaxAuthTries {{ ssh_max_auth_tries | default('3') }}
 MaxSessions {{ ssh_max_sessions | default('3') }}
 
-# Password authentication
+# Authentication methods
 PubkeyAuthentication yes
+AuthenticationMethods publickey
 PasswordAuthentication no
 PermitEmptyPasswords no
 ChallengeResponseAuthentication no
+UsePAM yes
 
 # Security settings
 IgnoreRhosts yes
 HostbasedAuthentication no
 PermitUserEnvironment no
-AllowUsers {{ ssh_allow_users | default(user) }}
+AllowUsers {{ ssh_allow_users | default(admin_user) }}
 
 # Forwarding
 X11Forwarding no
