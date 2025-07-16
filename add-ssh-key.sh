@@ -14,8 +14,13 @@ NC='\033[0m' # No Color
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Default values
-DEFAULT_USER="manager"
+# Default values - try to get admin_user from vars
+if [ -f "$SCRIPT_DIR/vars/local.yml" ]; then
+    ADMIN_USER=$(grep "^admin_user:" "$SCRIPT_DIR/vars/local.yml" | awk '{print $2}' | tr -d '"')
+elif [ -f "$SCRIPT_DIR/vars/default.yml" ]; then
+    ADMIN_USER=$(grep "^admin_user:" "$SCRIPT_DIR/vars/default.yml" | awk '{print $2}' | tr -d '"')
+fi
+DEFAULT_USER="${ADMIN_USER:-manager}"
 DEFAULT_KEY_FILE="$HOME/.ssh/id_rsa.pub"
 
 # Help function
@@ -53,6 +58,10 @@ show_help() {
     echo ""
     echo "  # Remove a key"
     echo "  $0 server.example.com -r -k 'ssh-rsa AAAAB3...'"
+    echo ""
+    echo "Note: Connects as '$DEFAULT_USER' user by default (from admin_user config)."
+    echo "Use ANSIBLE_USER env var to override:"
+    echo "  ANSIBLE_USER=simon $0 server.example.com"
 }
 
 # Parse arguments
@@ -166,6 +175,7 @@ echo ""
 
 ansible-playbook -i "$HOSTNAME," \
     "$SCRIPT_DIR/manage-ssh-keys.yml" \
+    -u "${ANSIBLE_USER:-$DEFAULT_USER}" \
     -e "$EXTRA_VARS"
 
 echo ""
