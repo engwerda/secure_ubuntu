@@ -6,6 +6,19 @@ if ! command -v uv &> /dev/null; then
     exit 1
 fi
 
+# Check if sshpass is installed (needed for password authentication)
+if ! command -v sshpass &> /dev/null; then
+    echo "sshpass is not installed. It's required for password authentication."
+    echo ""
+    echo "To install sshpass:"
+    echo "  Ubuntu/Debian: sudo apt-get install sshpass"
+    echo "  macOS: brew install hudochenkov/sshpass/sshpass"
+    echo "  Arch: sudo pacman -S sshpass"
+    echo ""
+    echo "Alternatively, set up SSH key authentication to avoid using passwords."
+    exit 1
+fi
+
 # Check if .venv exists, if not create it and install dependencies
 if [ ! -d ".venv" ]; then
     echo "Creating virtual environment and installing dependencies..."

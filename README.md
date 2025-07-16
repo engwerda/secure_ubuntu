@@ -41,10 +41,24 @@ A comprehensive Ansible playbook to quickly secure a fresh Ubuntu server install
 
 ### Prerequisites
 
-Install uv (Python package manager):
+1. Install uv (Python package manager):
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
+
+2. Install sshpass (for initial password authentication):
+```bash
+# Ubuntu/Debian
+sudo apt-get install sshpass
+
+# macOS
+brew install hudochenkov/sshpass/sshpass
+
+# Arch Linux
+sudo pacman -S sshpass
+```
+
+Note: sshpass is only needed for the initial setup when connecting as root with password. After the playbook runs, all authentication will use SSH keys.
 
 ### Installation
 
