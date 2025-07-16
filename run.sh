@@ -49,5 +49,6 @@ else
         exit 1
     fi
     echo "No inventory file found, using direct host: $1"
+    export ANSIBLE_HOST_KEY_CHECKING=False
     ansible-playbook playbook.yml -k -i "$1," -u root
 fi

@@ -26,7 +26,7 @@ ssh_max_sessions: 3
 ssh_client_alive_interval: 300
 ssh_client_alive_count_max: 2
 # Automatically include all created users for SSH access
-ssh_allow_users: "{{ ([admin_user] + (additional_users | default([]) | map(attribute='name') | list)) | join(',') }}"
+ssh_allow_users: "{{ ([admin_user] + (additional_users | default([]) | map(attribute='name') | list)) | join(' ') }}"
 ssh_allow_agent_forwarding: no
 ssh_allow_tcp_forwarding: no
 ssh_banner_path: /etc/issue.net
