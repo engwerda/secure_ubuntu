@@ -40,6 +40,15 @@
       when: not ansible_check_mode
 
   tasks:
+    # Wait for any apt locks to be released
+    - name: Wait for apt locks
+      ansible.builtin.shell: |
+        while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+          echo "Waiting for other apt process to finish..."
+          sleep 5
+        done
+      changed_when: false
+
     # System Updates
     - name: Update and upgrade system packages
       block:
